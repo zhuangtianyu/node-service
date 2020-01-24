@@ -1,6 +1,7 @@
 const Koa = require('koa')
 const Cors = require('koa2-cors')
 const Router = require('koa-router')
+const fs = require('fs')
 
 const corsConfig = {
   origin: ctx => {
@@ -18,14 +19,29 @@ const sleep = (ms = 1000) => new Promise((resolve) => {
   setTimeout(() => resolve(), ms)
 })
 
-router.get('/drink/list', async (ctx, next) => {
-  await sleep(), ctx.body = {
+router.get('/luck/article/list', async (ctx, next) => {
+  const service = () => new Promise((resolve, reject) => {
+    fs.readFile('./article-map.json', 'utf8', (error, data) => (
+      error !== null ? reject(error) : resolve(data)
+    ))
+  })
+
+  try {
+    const articleMap = JSON.parse(await service())
+    const data = Object.keys(articleMap).map(id => articleMap[id])
+    ctx.body = {
       status: true,
-      data: [{ name: 'cola' }],
-      message: ''
+      data,
+      message: '请求成功'
+    }
   }
-  console.log(ctx.body)
-  next()
+  catch {
+    ctx.body = {
+      status: false,
+      data: [],
+      message: '文章映射列表读取失败'
+    }
+  }
 })
 
 app
@@ -33,6 +49,3 @@ app
   .use(router.routes())
   .use(router.allowedMethods())
   .listen(1995)
-
-
-
