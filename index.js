@@ -1,11 +1,13 @@
 const Koa = require('koa')
 const Cors = require('koa2-cors')
+const BodyParser = require('koa-bodyparser')
 const Router = require('koa-router')
 const fs = require('fs')
+const EDIT_PASSWORD = require('./edit-password')
 
 const corsConfig = {
   origin: ctx => {
-    const WHITE_LIST = ['http://localhost:3000']
+    const WHITE_LIST = ['http://localhost:3000', 'http://www.zhuangtianyu.com']
     const requestOrigin = ctx.request.header.origin
     return WHITE_LIST.includes(requestOrigin) ? '*' : false
   }
@@ -13,6 +15,7 @@ const corsConfig = {
 
 const app = new Koa()
 const cors = new Cors(corsConfig)
+const bodyParser = new BodyParser()
 const router = new Router()
 
 const sleep = (ms = 1000) => new Promise((resolve) => {
@@ -25,10 +28,18 @@ const fetchArticleMap = () => new Promise((resolve, reject) => {
   ))
 })
 
+const updateArticleMap = jsonString => new Promise((resolve, reject) => {
+  fs.writeFile('./article-map.json', jsonString, 'utf8', error => {
+    error !== null ? reject(error) : resolve()
+  })
+})
+
 router.get('/luck/article/list', async (ctx, next) => {
   try {
     const articleMap = await fetchArticleMap()
-    const data = Object.keys(articleMap).map(id => articleMap[id])
+    const data = Object.keys(articleMap)
+      .map(id => articleMap[id])
+      .sort((a, b) => b.timestamp - a.timestamp)
     ctx.body = {
       status: true,
       data,
@@ -39,7 +50,7 @@ router.get('/luck/article/list', async (ctx, next) => {
     ctx.body = {
       status: false,
       data: [],
-      message: '文章映射列表读取失败'
+      message: '文章映射关系读取失败'
     }
   }
 })
@@ -57,13 +68,70 @@ router.get('/luck/article/detail/:id', async (ctx, next) => {
     ctx.body = {
       status: false,
       data: {},
-      message: '文章映射列表读取失败'
+      message: '文章映射关系读取失败'
     }
   }
 })
 
+router.post('/luck/article/edit/permission', (ctx, next) => {
+  const params = ctx.request.body
+  const { password } = params
+  ctx.body = password === EDIT_PASSWORD
+    ? { status: true, data: {}, message: '请求成功' }
+    : { status: false, data: {}, message: '密码验证失败' }
+})
+
+router.post('/luck/article/edit/submit', async (ctx, next) => {
+  const params = ctx.request.body
+  const { password, title, author, markdownString } = params
+
+  if (password !== EDIT_PASSWORD) {
+    return ctx.body = { status: false, data: {}, message: '编辑权限校验--不通过' }
+  }
+
+  try {
+    const articleMap = await fetchArticleMap()
+    const articleList = Object.keys(articleMap).map(id => articleMap[id])
+    const id = articleList.length !== 0
+      ? articleList.reduce((accumulator, article) => {
+          const { id } = article
+          return id > accumulator ? id : accumulator
+        }, 0) + 1
+      : 1000
+    const timestamp = new Date().valueOf()
+    const article = { id, title, author, timestamp, markdownString }
+
+    try {
+      await updateArticleMap(JSON.stringify({ ...articleMap, [id]: article }))
+      ctx.body = {
+        status: true,
+        data: { id },
+        message: '请求成功'
+      }
+    }
+    catch {
+      ctx.body = {
+        status: false,
+        data: {},
+        message: '文章映射关系写入失败'
+      }
+    }
+  }
+  catch {
+    ctx.body = {
+      status: false,
+      data: {},
+      message: '文章映射关系读取失败'
+    }
+  }
+  
+})
+
 app
   .use(cors)
+  .use(bodyParser)
   .use(router.routes())
   .use(router.allowedMethods())
   .listen(1995)
+
+
