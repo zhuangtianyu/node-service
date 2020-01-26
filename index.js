@@ -83,6 +83,7 @@ router.post('/luck/article/edit/permission', (ctx, next) => {
 router.post('/luck/article/edit/submit', async (ctx, next) => {
   const params = ctx.request.body
   const { password, title, author, markdownString } = params
+  let { id } = params
 
   if (password !== EDIT_PASSWORD) {
     return ctx.body = { status: false, data: {}, message: '编辑权限校验--不通过' }
@@ -90,18 +91,34 @@ router.post('/luck/article/edit/submit', async (ctx, next) => {
 
   try {
     const articleMap = await fetchArticleMap()
-    const articleList = Object.keys(articleMap).map(id => articleMap[id])
-    const id = articleList.length !== 0
-      ? articleList.reduce((accumulator, article) => {
-          const { id } = article
-          return id > accumulator ? id : accumulator
-        }, 0) + 1
-      : 1000
-    const timestamp = new Date().valueOf()
-    const article = { id, title, author, timestamp, markdownString }
+
+    // 新建文档
+    if (id === undefined) {
+      const articleList = Object.keys(articleMap).map(id => articleMap[id])
+      id = articleList.length !== 0
+        ? articleList.reduce((accumulator, article) => {
+            const { id } = article
+            return id > accumulator ? id : accumulator
+          }, 0) + 1
+        : 1000
+      const timestamp = new Date().valueOf()
+      const article = { id, title, author, timestamp, markdownString }
+      Object.assign(articleMap, { [id]: article })
+    }
+    // 编辑文档
+    else {
+      if (articleMap[id] === undefined) {
+        return ctx.body = {
+          status: false,
+          data: {},
+          message: '文章详情读取失败'
+        }
+      }
+      Object.assign(articleMap[id], { title, author, markdownString })
+    }
 
     try {
-      await updateArticleMap(JSON.stringify({ ...articleMap, [id]: article }))
+      await updateArticleMap(JSON.stringify(articleMap))
       ctx.body = {
         status: true,
         data: { id },
@@ -150,7 +167,3 @@ app
 
 
 
-
-
-
-  
