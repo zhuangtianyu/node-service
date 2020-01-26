@@ -146,7 +146,7 @@ router.post('/luck/upload', (ctx, next) => {
   const file = ctx.request.files.file
   const reader = fs.createReadStream(file.path);
   const fileName = `${new Date().valueOf()}.${file.name.split('.')[1]}`
-  const stream = fs.createWriteStream(`./image/${fileName}`)
+  const stream = fs.createWriteStream(`../image/${fileName}`)
   reader.pipe(stream)
 
   ctx.body = {
