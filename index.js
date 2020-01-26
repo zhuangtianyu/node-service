@@ -1,6 +1,5 @@
 const Koa = require('koa')
 const Cors = require('koa2-cors')
-const BodyParser = require('koa-bodyparser')
 const Router = require('koa-router')
 const fs = require('fs')
 const koaBody = require('koa-body')
@@ -16,7 +15,6 @@ const corsConfig = {
 
 const app = new Koa()
 const cors = new Cors(corsConfig)
-const bodyParser = new BodyParser()
 const router = new Router()
 
 const sleep = (ms = 1000) => new Promise((resolve) => {
@@ -143,7 +141,6 @@ router.post('/luck/upload', (ctx, next) => {
 
 app
   .use(cors)
-  .use(bodyParser)
   .use(koaBody({ multipart: true }))
   .use(router.routes())
   .use(router.allowedMethods())
@@ -153,3 +150,7 @@ app
 
 
 
+
+
+
+  
