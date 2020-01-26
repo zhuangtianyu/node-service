@@ -3,11 +3,12 @@ const Cors = require('koa2-cors')
 const BodyParser = require('koa-bodyparser')
 const Router = require('koa-router')
 const fs = require('fs')
+const koaBody = require('koa-body')
 const EDIT_PASSWORD = require('./edit-password')
 
 const corsConfig = {
   origin: ctx => {
-    const WHITE_LIST = ['http://localhost:3000', 'http://www.zhuangtianyu.com']
+    const WHITE_LIST = ['http://localhost:3000', 'http://zhuangtianyu.com']
     const requestOrigin = ctx.request.header.origin
     return WHITE_LIST.includes(requestOrigin) ? '*' : false
   }
@@ -124,14 +125,31 @@ router.post('/luck/article/edit/submit', async (ctx, next) => {
       message: '文章映射关系读取失败'
     }
   }
-  
+})
+
+router.post('/luck/upload', (ctx, next) => {
+  const file = ctx.request.files.file
+  const reader = fs.createReadStream(file.path);
+  const fileName = `${new Date().valueOf()}.${file.name.split('.')[1]}`
+  const stream = fs.createWriteStream(`./image/${fileName}`)
+  reader.pipe(stream)
+
+  ctx.body = {
+    status: true,
+    data: { src: `http://zhuangtianyu.com/image/${fileName}` },
+    message: '请求成功'
+  }
 })
 
 app
   .use(cors)
   .use(bodyParser)
+  .use(koaBody({ multipart: true }))
   .use(router.routes())
   .use(router.allowedMethods())
   .listen(1995)
+
+
+
 
 
