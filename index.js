@@ -7,7 +7,7 @@ const EDIT_PASSWORD = require('./edit-password')
 
 const corsConfig = {
   origin: ctx => {
-    const WHITE_LIST = ['http://localhost:3000', 'http://zhuangtianyu.com']
+    const WHITE_LIST = ['http://localhost:3000', 'http://zhuangtianyu.com', 'http://www.zhuangtianyu.com']
     const requestOrigin = ctx.request.header.origin
     return WHITE_LIST.includes(requestOrigin) ? '*' : false
   }
