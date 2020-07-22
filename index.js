@@ -37,7 +37,10 @@ router.get('/luck/article/list', async (ctx, next) => {
   try {
     const articleMap = await fetchArticleMap()
     const data = Object.keys(articleMap)
-      .map(id => articleMap[id])
+      .map(id => {
+        const { markdownString, ...others } = articleMap[id]
+        return { ...others }
+      })
       .sort((a, b) => b.timestamp - a.timestamp)
     ctx.body = {
       status: true,
