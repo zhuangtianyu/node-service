@@ -114,7 +114,7 @@ router.post('/luck/article/edit/submit', async (ctx, next) => {
         return ctx.body = {
           status: false,
           data: {},
-          message: '文章详情读取失败'
+          message: '不存在的文档 id'
         }
       }
       Object.assign(articleMap[id], { title, author, markdownString })
@@ -159,14 +159,57 @@ router.post('/luck/upload', (ctx, next) => {
   }
 })
 
+router.delete('/luck/article/delete', async ctx => {
+  const params = ctx.request.body
+  const { id, password } = params
+
+  if (password !== EDIT_PASSWORD) {
+    return ctx.body = { status: false, data: {}, message: '编辑权限校验--不通过' }
+  }
+
+  if (!id) {
+    return ctx.body = { status: false, data: {}, message: '缺少必填参数--id' }
+  }
+
+  try {
+    const articleMap = await fetchArticleMap()
+
+    if (articleMap[id] === undefined) {
+      return ctx.body = { status: false, data: {}, message: '不存在的文档 id' }
+    }
+
+    delete articleMap[id]
+
+    try {
+      await updateArticleMap(JSON.stringify(articleMap))
+
+      ctx.body = {
+        status: true,
+        data: {},
+        message: '操作成功'
+      }
+    }
+    catch {
+      ctx.body = {
+        status: false,
+        data: {},
+        message: '文章映射关系写入失败'
+      }
+    }
+  }
+  catch {
+    ctx.body = {
+      status: false,
+      data: {},
+      message: '文章映射关系读取失败'
+    }
+  }
+})
+
 app
   .use(cors)
-  .use(koaBody({ multipart: true }))
+  .use(koaBody({ multipart: true, strict: false }))
   .use(router.routes())
   .use(router.allowedMethods())
   .listen(1995)
-
-
-
-
-
+  
