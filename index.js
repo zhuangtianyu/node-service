@@ -7,7 +7,13 @@ const EDIT_PASSWORD = require('./edit-password')
 
 const corsConfig = {
   origin: ctx => {
-    const WHITE_LIST = ['http://localhost:3000', 'http://zhuangtianyu.com', 'http://www.zhuangtianyu.com']
+    const WHITE_LIST = [
+      'http://localhost:3000',
+      'http://zhuangtianyu.com',
+      'http://www.zhuangtianyu.com',
+      'https://zhuangtianyu.com',
+      'https://www.zhuangtianyu.com'
+    ]
     const requestOrigin = ctx.request.header.origin
     return WHITE_LIST.includes(requestOrigin) ? '*' : false
   }
@@ -33,7 +39,7 @@ const updateArticleMap = jsonString => new Promise((resolve, reject) => {
   })
 })
 
-router.get('/luck/article/list', async (ctx, next) => {
+router.get('/api/article/list', async (ctx, next) => {
   try {
     const articleMap = await fetchArticleMap()
     const data = Object.keys(articleMap)
@@ -57,7 +63,7 @@ router.get('/luck/article/list', async (ctx, next) => {
   }
 })
 
-router.get('/luck/article/detail/:id', async (ctx, next) => {
+router.get('/api/article/detail/:id', async (ctx, next) => {
   try {
     const articleMap = await fetchArticleMap()
     const id = ctx.params.id
@@ -75,7 +81,7 @@ router.get('/luck/article/detail/:id', async (ctx, next) => {
   }
 })
 
-router.post('/luck/article/edit/permission', (ctx, next) => {
+router.post('/api/article/edit/permission', (ctx, next) => {
   const params = ctx.request.body
   const { password } = params
   ctx.body = password === EDIT_PASSWORD
@@ -83,7 +89,7 @@ router.post('/luck/article/edit/permission', (ctx, next) => {
     : { status: false, data: {}, message: '密码验证失败' }
 })
 
-router.post('/luck/article/edit/submit', async (ctx, next) => {
+router.post('/api/article/edit/submit', async (ctx, next) => {
   const params = ctx.request.body
   const { password, title, author, markdownString } = params
   let { id } = params
@@ -145,7 +151,7 @@ router.post('/luck/article/edit/submit', async (ctx, next) => {
   }
 })
 
-router.post('/luck/upload', (ctx, next) => {
+router.post('/api/upload', (ctx, next) => {
   const file = ctx.request.files.file
   const reader = fs.createReadStream(file.path);
   const fileName = `${new Date().valueOf()}.${file.name.split('.')[1]}`
@@ -159,7 +165,7 @@ router.post('/luck/upload', (ctx, next) => {
   }
 })
 
-router.delete('/luck/article/delete', async ctx => {
+router.delete('/api/article/delete', async ctx => {
   const params = ctx.request.body
   const { id, password } = params
 
